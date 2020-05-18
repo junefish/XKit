@@ -1,5 +1,5 @@
 //* TITLE No Recommended **//
-//* VERSION 2.2.0 **//
+//* VERSION 2.3.1 **//
 //* DESCRIPTION Removes recommended posts **//
 //* DETAILS This extension removes recommended posts from your dashboard. To remove Recommended Blogs on the sidebar, please use Tweaks extension. **//
 //* DEVELOPER STUDIOXENIX **//
@@ -10,26 +10,20 @@ XKit.extensions.norecommended = new Object({
 
 	running: false,
 
-	run: function() {
-		this.running = true;
-		XKit.post_listener.add("norecommended", XKit.extensions.norecommended.do);
-		XKit.extensions.norecommended.do();
-	},
-
 	preferences: {
-	    "sep-0": {
-	        text: "Options",
-	        type: "separator"
-	    },
+		"sep-0": {
+			text: "Options",
+			type: "separator"
+		},
 		"no_liked": {
 			text: "Get rid of recommended likes",
 			default: false,
 			value: false
 		},
 		"no_mini_recs": {
-		    text: "Get rid of two-column recommended blogs",
-		    default: true,
-		    value: true
+			text: "Get rid of two-column recommended blogs",
+			default: true,
+			value: true
 		},
 		"hide_recommended_on_blogs": {
 			text: "Hide recommended posts under permalinked posts on user blogs",
@@ -38,9 +32,33 @@ XKit.extensions.norecommended = new Object({
 		}
 	},
 
+	run: function() {
+		this.running = true;
+
+		if (XKit.page.react) {
+			XKit.post_listener.add('norecommended', this.react_do);
+			this.react_do();
+			return;
+		}
+
+		XKit.post_listener.add("norecommended", XKit.extensions.norecommended.do);
+		XKit.extensions.norecommended.do();
+	},
+
+	react_do: function() {
+		$('[data-id]:not(.norecommended-done)').each(async function() {
+			const $this = $(this).addClass('norecommended-done');
+			const {recommendationReason} = await XKit.interface.react.post_props($this.attr('data-id'));
+
+			if (recommendationReason !== null && recommendationReason !== undefined) {
+				$this.hide();
+			}
+		});
+	},
+
 	do: function() {
 
-	    if (XKit.extensions.norecommended.preferences.no_mini_recs.value) {
+		if (XKit.extensions.norecommended.preferences.no_mini_recs.value) {
 			XKit.tools.add_css(" .recommended-unit-container.blog-card-compact {display: none;}", "norecommended_no_mini_recs");
 		}
 
@@ -52,7 +70,7 @@ XKit.extensions.norecommended = new Object({
 
 		$(".posts .post").not(".norecommended-done").each(function() {
 
-			$(this).addClass(".norecommended-done");
+			$(this).addClass("norecommended-done");
 
 			if ($(this).hasClass("is_recommended") || $(this).find(".post_info_recommended").length > 0) {
 				$(this).remove();
@@ -82,7 +100,7 @@ XKit.extensions.norecommended = new Object({
 	hide_recommended_on_blogs: function() {
 		if (!XKit.interface.is_tumblr_page()) {
 			//We're not going to expect other themes have this class as well.
-			XKit.tools.add_css(".related-posts-wrapper, .recommended-posts-wrapper {display:none;}","norecommended_hide_recommended_on_blogs");
+			XKit.tools.add_css(".related-posts-wrapper, .recommended-posts-wrapper {display:none;}", "norecommended_hide_recommended_on_blogs");
 		}
 	},
 

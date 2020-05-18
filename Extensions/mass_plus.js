@@ -1,5 +1,5 @@
 //* TITLE Mass+ **//
-//* VERSION 0.4.2 **//
+//* VERSION 0.4.7 **//
 //* DESCRIPTION Enhancements for the Mass Editor **//
 //* DETAILS This extension allows you to select multiple posts by once, by type or month. It also comes with visual enhancements for the mass post editor, such as selected post count and more! **//
 //* DEVELOPER STUDIOXENIX **//
@@ -33,8 +33,8 @@ XKit.extensions.mass_plus = new Object({
 	},
 	do_headings: function() {
 		$(".heading").each(function() {
-			if ($(this).find(".xkit-mass-plus-buttons-month-inside").length > 0) { 
-				return; 
+			if ($(this).find(".xkit-mass-plus-buttons-month-inside").length > 0) {
+				return;
 			}
 			$(this).append( "<div class=\"xkit-mass-plus-buttons-month-inside\">" +
 				"<div data-type=\"month-select\" class=\"xkit-mass-link xkit-selector\">first 100 in this month</div>" +
@@ -100,17 +100,17 @@ XKit.extensions.mass_plus = new Object({
 		$(".xkit-mass-plus-buttons-month .xkit-mass-link").bind("click", function() {
 			var m_type = $(this).attr('data-type');
 			if (m_type === "help") {
-				XKit.window.show("Mass+ Help","<b>Welcome to Mass+, enhancements for Mass Editor.</b><br/>Use this menu to select from all the visible posts. Unfortunately, the Tumblr limit on editing posts at once is 100, so Mass+ can't select more than 100 at once.<br/><br/>You can select the first 100 posts, deselect all or select by the type of the post. In order to select all posts, you might need to scroll down and let more posts load.","info","<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
+				XKit.window.show("Mass+ Help", "<b>Welcome to Mass+, enhancements for Mass Editor.</b><br/>Use this menu to select from all the visible posts. Unfortunately, the Tumblr limit on editing posts at once is 100, so Mass+ can't select more than 100 at once.<br/><br/>You can select the first 100 posts, deselect all or select by the type of the post. In order to select all posts, you might need to scroll down and let more posts load.", "info", "<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
 				return;
 			}
 			if (m_type === "search-tags") {
-				XKit.window.show("Search by Tags","Please enter the tag to search for: <input id=\"xkit-mass-search-tag-txt\" type=\"text\" maxlength=\"64\" class=\"xkit-textbox\" placeholder=\"Enter a tag (ie: xkit)\" /><br/>You can only search for <b>one</b> tag at a time.<br/>The first 100 results will be selected.","question","<div id=\"xkit-mass-search-for-tags\" class=\"xkit-button default\">Search</div><div id=\"xkit-close-message\" class=\"xkit-button\">Cancel</div>");
+				XKit.window.show("Search by Tags", "Please enter the tag to search for: <input id=\"xkit-mass-search-tag-txt\" type=\"text\" class=\"xkit-textbox\" placeholder=\"Enter a tag (ie: xkit)\" /><br/>You can only search for <b>one</b> tag at a time.<br/>The first 100 results will be selected.", "question", "<div id=\"xkit-mass-search-for-tags\" class=\"xkit-button default\">Search</div><div id=\"xkit-close-message\" class=\"xkit-button\">Cancel</div>");
 				$("#xkit-mass-search-for-tags").click(function() {
 					if ($.trim($("#xkit-mass-search-tag-txt").val()) === "") {
 						XKit.window.close();
 					}
 					XKit.extensions.mass_plus.search($("#xkit-mass-search-tag-txt").val());
-					XKit.window.show("Please wait..","Searching for tags, this might take a while..","info");
+					XKit.window.show("Please wait..", "Searching for tags, this might take a while..", "info");
 				});
 				return;
 			}
@@ -123,13 +123,13 @@ XKit.extensions.mass_plus = new Object({
 			}
 			if (m_type === "deselect-all") {
 				$("a.brick").removeClass("highlighted");
-				$(".editor_navigation button").attr('disabled','disabled');
+				$(".editor_navigation button").attr('disabled', 'disabled');
 				XKit.extensions.mass_plus.update_count();
 				return;
 			}
 			if (m_type === "private") {
 				$("a.brick").removeClass("highlighted");
-				$(".editor_navigation button").attr('disabled','disabled');
+				$(".editor_navigation button").attr('disabled', 'disabled');
 				$(".private_overlay:lt(100)").parent().addClass("highlighted");
 				if ($(".highlighted").length > 0) {
 					$(".editor_navigation button").removeAttr('disabled');
@@ -160,32 +160,36 @@ XKit.extensions.mass_plus = new Object({
 		var last_brick_classes = $(last_brick).attr('class');
 		var last_ts_start = last_brick_classes.indexOf('timestamp_');
 		if (last_ts_start === -1) {
-			alert("Error fetching tags: 100");
+			XKit.window.show("Could not fetch tags",
+				"Error: 100 - timestamp not found.",
+				"error",
+				'<div class="xkit-button default" id="xkit-close-message">OK</div>'
+			);
 			return;
 		}
 		var last_timestamp = last_brick_classes.substring(last_ts_start + 10);
 		if (last_timestamp.indexOf(" ") !== -1) {
 			last_timestamp = last_timestamp.substring(0, last_timestamp.indexOf(" "));
 		}
-		var blog_shortname = document.location.href.substring(document.location.href.indexOf('mega-editor/') + 12);
-		if (blog_shortname .indexOf("/") !== -1) { blog_shortname = blog_shortname.substring(0, blog_shortname.indexOf("/")); }
-		if (blog_shortname .indexOf("?") !== -1) { blog_shortname = blog_shortname.substring(0, blog_shortname.indexOf("?")); }
-		if (blog_shortname .indexOf("#") !== -1) { blog_shortname = blog_shortname.substring(0, blog_shortname.indexOf("#")); }
+		var [/* root */, /* page */, /* state */, blog_shortname] = location.pathname.split("/");
 		this.search_found_count = 0;
 		this.search_last_timestamp = last_timestamp;
 		this.search_page = 0;
 		this.search_found_posts = [];
-		this.search_url = "http://api.tumblr.com/v2/blog/" + blog_shortname + ".tumblr.com/posts?api_key=" + XKit.api_key + "&tag=" + tag.toLowerCase();
+		this.search_url = `https://api.tumblr.com/v2/blog/${blog_shortname}/posts?` + $.param({
+			"api_key": XKit.api_key,
+			"tag": tag.toLowerCase()
+		});
 		this.search_next_page(tag.toLowerCase());
 	},
 	search_next_page: function(tag) {
 		var search_url = this.search_url + "&offset=" + (this.search_page * this.api_page_length);
-		XKit.console.add("Fetching " + search_url);
+		console.log("Fetching " + search_url);
 		GM_xmlhttpRequest({
 			method: "GET",
 			url: search_url,
 			onerror: function(response) {
-				XKit.window.show("Can't fetch archive.","Could not fetch required pages to complete your request. Please try again later.","error","<div class=\"xkit-button default\" id=\"xkit-close-message\">OK</div>");
+				XKit.window.show("Can't fetch archive.", "Could not fetch required pages to complete your request. Please try again later.", "error", "<div class=\"xkit-button default\" id=\"xkit-close-message\">OK</div>");
 			},
 			onload: function(response) {
 				var response_object = JSON.parse(response.response);
@@ -195,7 +199,7 @@ XKit.extensions.mass_plus = new Object({
 					return;
 				}
 				posts_array.forEach(function(post) {
-					XKit.extensions.mass_plus.search_found_posts.push(post.id);
+					XKit.extensions.mass_plus.search_found_posts.push(post.id_string);
 					XKit.extensions.mass_plus.search_found_count++;
 				});
 				if (XKit.extensions.mass_plus.search_found_count < 100 && XKit.extensions.mass_plus.search_page <= 5) {
@@ -213,19 +217,19 @@ XKit.extensions.mass_plus = new Object({
 	},
 	search_results: function(tag) {
 		if (this.search_found_count === 0) {
-			XKit.window.show("No results found","Zero results found for the tag '" + tag + "'","info","<div class=\"xkit-button default\" id=\"xkit-close-message\">OK</div>");
+			XKit.window.show("No results found", "Zero results found for the tag '" + tag + "'", "info", "<div class=\"xkit-button default\" id=\"xkit-close-message\">OK</div>");
 			return;
 		}
 		XKit.window.close();
 		$("a.brick").removeClass("highlighted");
-		for (var i=0;i<this.search_found_posts.length;i++) {
+		for (var i = 0; i < this.search_found_posts.length; i++) {
 			if (i >= 100) { break; }
 			$("#post_" + this.search_found_posts[i]).addClass("highlighted");
 		}
 		this.update_count();
 	},
 	show_100_error: function() {
-		XKit.window.show("Trying to select over 100 posts","This action would result in more than 100 posts being selected, so Mass+ can not continue. Please deselect some posts, or click on Deselect All on top to continue.<br/><br/>This is a Tumblr limitation.<br/>For more information about this, please click on the <b>\"help\"</b> link on the top left corner of this page.","error","<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
+		XKit.window.show("Trying to select over 100 posts", "This action would result in more than 100 posts being selected, so Mass+ can not continue. Please deselect some posts, or click on Deselect All on top to continue.<br/><br/>This is a Tumblr limitation.<br/>For more information about this, please click on the <b>\"help\"</b> link on the top left corner of this page.", "error", "<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
 	},
 	update_count: function(from_click) {
 		var sel_count = $("a.brick.highlighted").length;
@@ -234,9 +238,9 @@ XKit.extensions.mass_plus = new Object({
 			return;
 		}
 		if (sel_count === 100) {
-			XKit.notifications.add(sel_count + " posts selected.","ok");
+			XKit.notifications.add(sel_count + " posts selected.", "ok");
 		} else {
-			XKit.notifications.add(sel_count + " posts selected.<br/>You might need to scroll down to load more posts.","ok");
+			XKit.notifications.add(sel_count + " posts selected.<br/>You might need to scroll down to load more posts.", "ok");
 		}
 	},
 	destroy: function() {

@@ -1,5 +1,5 @@
 //* TITLE Mass Deleter **//
-//* VERSION 0.1.3 **//
+//* VERSION 0.2.1 **//
 //* DESCRIPTION Mass unlike likes / delete drafts **//
 //* DETAILS Used to mass unlike posts or delete drafts. Please use with caution, especially Mass Unlike part is extremely experimental. **//
 //* DEVELOPER STUDIOXENIX **//
@@ -22,8 +22,6 @@ XKit.extensions.mass_deleter = new Object({
 	run: function() {
 		this.running = true;
 
-		XKit.tools.init_css("mass_deleter");
-
 		if (XKit.interface.where().likes === true) {
 			if (XKit.extensions.mass_deleter.preferences.enable_mass_unlike.value === true) {
 				XKit.extensions.mass_deleter.init_likes();
@@ -38,39 +36,14 @@ XKit.extensions.mass_deleter = new Object({
 
 	init_drafts: function() {
 
-		if ($("#drafts_plus_sidebar").length > 0) {
-
-			xf_html = '<li class="no_push">' +
-					'<a href="#" class="customize xkit-mass-deleter" id="xkit-mass-deleter-100">' +
-						'<div class="hide_overflow">Delete 100 Drafts</div>' +
-					'</a>' +
-				'</li>' +
-				'<li class="no_push">' +
-					'<a href="#" class="customize xkit-mass-deleter" id="xkit-mass-deleter-1000">' +
-						'<div class="hide_overflow">Delete 1,000 Drafts</div>' +
-					'</a>' +
-				'</li>';
-
-			$("#drafts_plus_sidebar").append(xf_html);
-
-		} else {
-
-			xf_html = '<ul class="controls_section" id="xkit-mass-deleter-ul">' +
-				'<li class="section_header selected">MASS DELETER</li>' +
-				'<li class="no_push">' +
-					'<a href="#" class="customize xkit-mass-deleter" onclick="return false;" id="xkit-mass-deleter-100">' +
-						'<div class="hide_overflow">Delete 100 Drafts</div>' +
-					'</a>' +
-				'</li>' +
-				'<li class="no_push">' +
-					'<a href="#" class="customize xkit-mass-deleter" onclick="return false;" id="xkit-mass-deleter-1000">' +
-						'<div class="hide_overflow">Delete 1,000 Drafts</div>' +
-					'</a>' +
-				'</li>' +
-				'</ul>';
-			$("ul.controls_section:eq(1)").before(xf_html);
-
-		}
+		XKit.interface.sidebar.add({
+			id: "xkit-mass-deleter-sidebar",
+			title: "Mass Deleter",
+			items: [
+				{ id: "xkit-mass-deleter-100", text: "Delete 100 Drafts" },
+				{ id: "xkit-mass-deleter-1000", text: "Delete 1000 Drafts" }
+			]
+		});
 
 		$("#xkit-mass-deleter-100").click(function() {
 			XKit.extensions.mass_deleter.delete_drafts(100);
@@ -106,7 +79,7 @@ XKit.extensions.mass_deleter = new Object({
 		XKit.extensions.mass_deleter.delete_drafts_array = [];
 		XKit.extensions.mass_deleter.delete_drafts_page = 1;
 
-		XKit.window.show("Mass Deleting Drafts","<b>This might take a long, long time...</b><div id=\"xkit-mass-deleter-status\">Initializing: Gathering post ids..</div>" + XKit.progress.add("mass-deleter-progress"),"info");
+		XKit.window.show("Mass Deleting Drafts", "<b>This might take a long, long time...</b><div id=\"xkit-mass-deleter-status\">Initializing: Gathering post ids..</div>" + XKit.progress.add("mass-deleter-progress"), "info");
 
 		var posts = XKit.interface.get_posts();
 
@@ -129,7 +102,6 @@ XKit.extensions.mass_deleter = new Object({
 		XKit.extensions.mass_deleter.delete_drafts_page++;
 		XKit.extensions.mass_deleter.delete_next_page();
 
-
 	},
 
 	delete_current_array: function() {
@@ -143,7 +115,7 @@ XKit.extensions.mass_deleter = new Object({
 	delete_current_array_next: function() {
 
 		if (XKit.extensions.mass_deleter.delete_drafts_array.length === 0) {
-			XKit.window.show("Complete!","<b>Deleted " + (XKit.extensions.mass_deleter.delete_from_array_max - XKit.extensions.mass_deleter.delete_fail_count) + " posts.<br/>Failed to delete " + XKit.extensions.mass_deleter.delete_fail_count + " posts.</b><br/><br/>Please refresh the page before deleting more drafts.","info","<div id=\"xkit-close-message-2\" class=\"xkit-button default\">OK</div>");
+			XKit.window.show("Complete!", "<b>Deleted " + (XKit.extensions.mass_deleter.delete_from_array_max - XKit.extensions.mass_deleter.delete_fail_count) + " posts.<br/>Failed to delete " + XKit.extensions.mass_deleter.delete_fail_count + " posts.</b><br/><br/>Please refresh the page before deleting more drafts.", "info", "<div id=\"xkit-close-message-2\" class=\"xkit-button default\">OK</div>");
 
 			$("#xkit-close-message-2").click(function() {
 				location.reload();
@@ -194,7 +166,7 @@ XKit.extensions.mass_deleter = new Object({
 
 		$("#xkit-mass-deleter-status").html("Initializing: Gathering post ids.. (page " + XKit.extensions.mass_deleter.delete_drafts_page + ", total: "  + XKit.extensions.mass_deleter.delete_drafts_array.length + ")");
 
-		var m_url = document.location.href.replace("#","");
+		var m_url = document.location.href.replace("#", "");
 
 		m_url = m_url + "/after/" + XKit.extensions.mass_deleter.delete_last_post_id;
 
@@ -231,7 +203,7 @@ XKit.extensions.mass_deleter = new Object({
 
 				XKit.extensions.mass_deleter.delete_next_current = 0;
 
-				$(".posts .post",m_div).each(function() {
+				$(".posts .post", m_div).each(function() {
 					var m_post = XKit.interface.post($(this));
 					if (XKit.extensions.mass_deleter.delete_drafts_array.length >= XKit.extensions.mass_deleter.delete_drafts_limit) {
 						XKit.extensions.mass_deleter.delete_current_array();
@@ -260,19 +232,14 @@ XKit.extensions.mass_deleter = new Object({
 
 	init_likes: function() {
 
-		xf_html = '<ul class="controls_section" id="xkit-mass-deleter-ul">' +
-			'<li class="no_push">' +
-				'<a href="#" class="customize xkit-mass-deleter" onclick="return false;" id="xkit-mass-deleter-100">' +
-					'<div class="hide_overflow">Unlike 100 Likes</div>' +
-				'</a>' +
-			'</li>' +
-			'<li class="no_push">' +
-				'<a href="#" class="customize xkit-mass-deleter" onclick="return false;" id="xkit-mass-deleter-1000">' +
-					'<div class="hide_overflow">Unlike 1,000 Likes</div>' +
-				'</a>' +
-			'</li>' +
-			'</ul>';
-		$("ul.controls_section:eq(1)").before(xf_html);
+		XKit.interface.sidebar.add({
+			id: "xkit-mass-deleter-sidebar",
+			title: "Mass Unliker",
+			items: [
+				{ id: "xkit-mass-deleter-100", text: "Unlike 100 Likes" },
+				{ id: "xkit-mass-deleter-1000", text: "Unlike 1,000 Likes" }
+			]
+		});
 
 		$("#xkit-mass-deleter-100").click(function() {
 			XKit.extensions.mass_deleter.unlike_likes(100);
@@ -293,12 +260,13 @@ XKit.extensions.mass_deleter = new Object({
 
 	unlike_next_max: 30,
 	unlike_next_current: 0,
+	unlike_next_page_url: undefined,
 
 	unlike_fail_count: 0,
 
 	unlike_likes: function(limit) {
 
-		XKit.window.show("Warning!","Due to the way Tumblr works, mass unliking posts might or might not cause older likes to not show up. This is a very experimental feature and no support is provided. Please only continue if you are sure that you want to do this.","warning","<div class=\"xkit-button default\" id=\"xkit-mass-deleter-unlike-continue\">Continue</div><div class=\"xkit-button\" id=\"xkit-close-message\">Cancel</div>");
+		XKit.window.show("Warning!", "Due to the way Tumblr works, mass unliking posts might or might not cause older likes to not show up. This is a very experimental feature and no support is provided. Please only continue if you are sure that you want to do this.", "warning", "<div class=\"xkit-button default\" id=\"xkit-mass-deleter-unlike-continue\">Continue</div><div class=\"xkit-button\" id=\"xkit-close-message\">Cancel</div>");
 
 		$("#xkit-mass-deleter-unlike-continue").click(function() {
 
@@ -306,7 +274,7 @@ XKit.extensions.mass_deleter = new Object({
 			XKit.extensions.mass_deleter.unlike_likes_array = [];
 			XKit.extensions.mass_deleter.unlike_likes_page = 1;
 
-			XKit.window.show("Mass Unliking Posts","<b>This might take a long, long time...</b><div id=\"xkit-mass-deleter-status\">Initializing: Gathering post ids..</div>" + XKit.progress.add("mass-deleter-progress"),"info");
+			XKit.window.show("Mass Unliking Posts", "<b>This might take a long, long time...</b><div id=\"xkit-mass-deleter-status\">Initializing: Gathering post ids..</div>" + XKit.progress.add("mass-deleter-progress"), "info");
 
 			var posts = XKit.interface.get_posts();
 
@@ -320,6 +288,7 @@ XKit.extensions.mass_deleter = new Object({
 			XKit.extensions.mass_deleter.unlike_fail_count = 0;
 			XKit.extensions.mass_deleter.unlike_next_current = 0;
 			XKit.extensions.mass_deleter.unlike_likes_page++;
+			XKit.extensions.mass_deleter.unlike_next_page_url = $("#next_page_link").attr("href");
 			XKit.extensions.mass_deleter.unlike_next_page();
 
 		});
@@ -338,7 +307,7 @@ XKit.extensions.mass_deleter = new Object({
 
 		if (XKit.extensions.mass_deleter.unlike_likes_array.length === 0) {
 			console.log(	XKit.extensions.mass_deleter.unlike_likes_array);
-			XKit.window.show("Complete!","<b>Unliked " + (XKit.extensions.mass_deleter.unlike_from_array_max - XKit.extensions.mass_deleter.unlike_fail_count) + " posts.<br/>Failed to unlike " + XKit.extensions.mass_deleter.unlike_fail_count + " posts.</b><br/><br/>You might get a \"No Posts Found\" page when visiting the Likes page after Mass Unliking. Like a few posts and try again in a few hours, and it should return to normal. If XKit is unable to unlike posts, it's Tumblr's servers trying to adjust to unlikes. Try again in a couple of hours before Mass Unliking again.","info","<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
+			XKit.window.show("Complete!", "<b>Unliked " + (XKit.extensions.mass_deleter.unlike_from_array_max - XKit.extensions.mass_deleter.unlike_fail_count) + " posts.<br/>Failed to unlike " + XKit.extensions.mass_deleter.unlike_fail_count + " posts.</b><br/><br/>You might get a \"No Posts Found\" page when visiting the Likes page after Mass Unliking. Like a few posts and try again in a few hours, and it should return to normal. If XKit is unable to unlike posts, it's Tumblr's servers trying to adjust to unlikes. Try again in a couple of hours before Mass Unliking again.", "info", "<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
 			return;
 		}
 
@@ -380,8 +349,11 @@ XKit.extensions.mass_deleter = new Object({
 
 		GM_xmlhttpRequest({
 			method: "GET",
-			url: "http://www.tumblr.com/likes/page/" + XKit.extensions.mass_deleter.unlike_likes_page + "?t=" + XKit.tools.random_string(),
+			url: "https://www.tumblr.com" + XKit.extensions.mass_deleter.unlike_next_page_url,
 			json: false,
+			headers: {
+				"X-Requested-With": "XMLHttpRequest",
+			},
 			onerror: function(response) {
 				XKit.window.close();
 				XKit.extensions.mass_deleter.display_error();
@@ -410,8 +382,8 @@ XKit.extensions.mass_deleter = new Object({
 				}
 
 				XKit.extensions.mass_deleter.unlike_next_current = 0;
-
-				$(".posts .post",m_div).each(function() {
+				XKit.extensions.mass_deleter.unlike_next_page_url = response.getResponseHeader("X-Next-Page");
+				$(".post_container .post", m_div).each(function() {
 					var m_post = XKit.interface.post($(this));
 					if (XKit.extensions.mass_deleter.unlike_likes_array.length >= XKit.extensions.mass_deleter.unlike_likes_limit) {
 						XKit.extensions.mass_deleter.unlike_current_array();
@@ -422,7 +394,12 @@ XKit.extensions.mass_deleter = new Object({
 						XKit.extensions.mass_deleter.unlike_likes_array.push(m_post.id + ";" + m_post.reblog_key);
 					}
 				});
-
+				if (XKit.extensions.mass_deleter.unlike_next_page_url == null) {
+					//We didn't get the next page, so we're assuming this one was the last.
+					XKit.extensions.mass_deleter.unlike_current_array();
+					stop_action = true;
+				
+				}
 				if (stop_action) { return; }
 
 				XKit.extensions.mass_deleter.unlike_likes_page++;
@@ -435,13 +412,13 @@ XKit.extensions.mass_deleter = new Object({
 
 	display_error: function() {
 
-		XKit.window.show("Unable to perform task","Please try again later or file a bug report at the XKit blog.","error","<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
+		XKit.window.show("Unable to perform task", "Please try again later or file a bug report at the XKit blog.", "error", "<div id=\"xkit-close-message\" class=\"xkit-button default\">OK</div>");
 
 	},
 
 	destroy: function() {
 		this.running = false;
-		$("#xkit-mass-deleter-ul").remove();
+		XKit.interface.sidebar.remove("xkit-mass-deleter-sidebar");
 	}
 
 });

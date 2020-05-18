@@ -1,5 +1,5 @@
 //* TITLE AccessKit **//
-//* VERSION 1.2.0 **//
+//* VERSION 2.0.0 **//
 //* DESCRIPTION Accessibility tools for Tumblr **//
 //* DETAILS Provides accessibility tools for XKit and your dashboard, such as increased font sizes, more contrast on icons and more. **//
 //* DEVELOPER new-xkit **//
@@ -40,25 +40,30 @@ XKit.extensions.accesskit = new Object({
 			default: true,
 			value: true
 		},
+		no_npf_colors: {
+			text: "Don't display NPF (user-set) colours in posts",
+			default: false,
+			value: false
+		},
 		contrast_icons: {
 			text: "Increase the contrast of dashboard icons and text",
-			default: true,
-			value: true
+			default: false,
+			value: false
 		},
 		contrast_sidebar: {
 			text: "Increase the contrast of sidebar icons and text",
-			default: true,
-			value: true
+			default: false,
+			value: false
 		},
 		contrast_notifications: {
 			text: "Increase the contrast of notifications",
-			default: true,
-			value: true
+			default: false,
+			value: false
 		},
 		increase_font_size: {
 			text: "Increase the size of the text",
-			default: true,
-			value: true
+			default: false,
+			value: false
 		},
 		increase_post_margins: {
 			text: "Increase the space between posts",
@@ -71,40 +76,118 @@ XKit.extensions.accesskit = new Object({
 		},
 		xkit_disable_counter: {
 			text: "Disable XKit extensions/settings that might have a negative effect on accessibility",
-			default: true,
-			value: true
+			default: false,
+			value: false
 		},
 		xkit_contrast_icons: {
 			text: "Increase the contrast of XKit user interface",
-			default: true,
-			value: true
+			default: false,
+			value: false
 		},
 		"sep-1": {
 			text: "Color Adjustments",
 			type: "separator"
 		},
 		invert: {
-			text: "Invert colors (Chrome/Safari only, may cause slowness/problems)",
+			text: "Invert colors (May cause slowness/problems)",
 			default: false,
 			value: false,
 			experimental: true
 		},
 		grayscale: {
-			text: "Use grayscale colors (Chrome/Safari only, may cause slowness/problems)",
+			text: "Use grayscale colors (May cause slowness/problems)",
 			default: false,
 			value: false,
 			experimental: true
 		},
 		contrast: {
-			text: "Increase overall contrast (Chrome/Safari only, may cause slowness/problems)",
+			text: "Increase overall contrast (May cause slowness/problems)",
 			default: false,
 			value: false,
 			experimental: true
 		}
 	},
 
+	cpanel: function() {
+		if (!XKit.page.react) {
+			return;
+		}
+
+		const deprecated_options = [
+			'visible_captions',
+			'contrast_sidebar',
+			'contrast_icons',
+			'contrast_notifications',
+			'increase_font_size',
+			'xkit_disable_counter',
+			'contrast'
+		].map(x => `[data-setting-id="${x}"]`).join(',');
+
+		$(deprecated_options).remove();
+	},
+
 	run: function() {
 		this.running = true;
+
+		XKit.tools.init_css('accesskit');
+
+		if (XKit.page.react) {
+			const {font, make_links_blue, no_npf_colors, increase_post_margins, xkit_contrast_icons} = this.preferences;
+
+			const font_families = {
+				'sans-serif': '"Palatino Linotype", "Book Antiqua", Palatino, serif',
+				'opendyslexic': 'open-dyslexic'
+			};
+			if (font.value !== 'default') {
+				XKit.tools.add_css(
+					`article { --font-family: ${font_families[font.value]};}`,
+					'accesskit'
+				);
+			}
+
+			if (make_links_blue.value) {
+				XKit.tools.add_css(
+					'article p a { color: var(--blue); }',
+					'accesskit'
+				);
+			}
+
+			if (no_npf_colors.value) {
+				XKit.tools.add_css(
+					'article span[style^="color:"] { color: var(--black) !important; }',
+					'accesskit'
+				);
+			}
+
+			if (increase_post_margins.value) {
+				XKit.tools.add_css(
+					'article { margin-bottom: 40px; }',
+					'accesskit'
+				);
+			}
+
+			if (xkit_contrast_icons.value) {
+				XKit.tools.add_css(this.xkit_contrast_icons_css, 'accesskit');
+			}
+
+			const {invert, grayscale} = this.preferences;
+			if (invert.value || grayscale.value) {
+				const do_invert = invert.value ? 'invert(100%)' : '';
+				const do_grayscale = grayscale.value ? 'grayscale(100%)' : '';
+				XKit.tools.add_css(`
+					html {
+						height: 100%;
+					}
+					body {
+						height: 100%;
+						filter: ${do_invert} ${do_grayscale};
+					}
+				`,
+				'accesskit');
+			}
+
+			return;
+		}
 
 		var m_css = "";
 
@@ -153,7 +236,7 @@ XKit.extensions.accesskit = new Object({
 
 		if (m_filters !== "") {
 
-			m_css = m_css + " html { -webkit-filter: " + m_filters + "; } ";
+			m_css = m_css + "html {height: 100%; } body { height: 100%; filter: " + m_filters + "; } ";
 
 		}
 
@@ -163,6 +246,10 @@ XKit.extensions.accesskit = new Object({
 
 		if (this.preferences.make_links_blue.value === true) {
 			m_css = m_css + " .post .post_body a, .reblog-content a { color: #2449c1 !important; font-weight: bold !important; } ";
+		}
+
+		if (this.preferences.no_npf_colors.value) {
+			m_css += ".post span { color: inherit !important; }";
 		}
 
 		if (this.preferences.contrast_sidebar.value === true) {
@@ -259,46 +346,52 @@ XKit.extensions.accesskit = new Object({
 
 		if (this.preferences.xkit_contrast_icons.value === true) {
 
-			m_css = m_css + " .xkit-extension-setting, .xkit-extension-setting-separator { color: black !important; border-bottom: 1px solid rgb(100,100,100); } " +
-					" .xkit-extension-setting-separator { background: rgb(230,230,230); }" +
-					" #xkit-extensions-panel-top { border-bottom: 1px solid black; } " +
-					" #xkit-extensions-panel-right, #xkit-extensions-panel-left, #xkit-extensions-panel-left-search { border-color: black; } " +
-					" #xkit-extensions-panel-left .xkit-extension {color: black; border-color: black; } " +
-					" .xkit-button { border-color: black; color: black; } " +
-					" .xkit-button:hover { border-color: black; color: black; text-decoration: underline; } " +
-					" #xkit-extensions-panel-top .description, #xkit-extensions-panel-top .description .details { color: black; } " +
-					" .xkit-checkbox, .xkit-change-ext-setting-checkbox { color: black } .xkit-change-ext-setting-checkbox:hover, .xkit-checkbox:hover { text-decoration: underline; } " +
-					" .xkit-extension-setting.checkbox .xkit-checkbox, .xkit-extension-setting .title { color: black; } " +
-					" .xkit-checkbox.selected b { background-color: #184e98; } " +
-					" .xkit-checkbox b { border: 1px solid black; } " +
-					" #xkit-extensions-panel-right .xkit-others-panel .description { color: black; } " +
-					" .xkit-progress-bar { border: 1px solid black; box-shadow: none; } " +
-					" .xkit-progress-bar-inner { background: #154389; } " +
-					" #xkit-about-window-text .subtitle, #xkit-about-window-links a {color: black; } " +
-					" #xkit-extensions-panel-left .xkit-extension .title { color: black; }" +
-					" #xkit-extensions-panel-left .xkit-extension.text-only.selected, #xkit-extensions-panel-left .xkit-extension.selected .title { color: black; font-weight: bold; text-decoration: underline; } " +
-					" #xkit-extensions-display-type-iconic, #xkit-extensions-display-type-normal { border-color: black; } " +
-					" #xkit-extensions-panel-left .xkit-extension.text-only { color: black; }" +
-					" #xkit-extensions-panel-left .xkit-extension.text-only.selected { text-decoration: underline; } " +
-					" #xkit-extensions-panel-right .xkit-message-display { color: black; } " +
-					" #xkit-extensions-panel-right .xkit-message-info { color: black; border-bottom: 1px solid black; } " +
-					" #xkit-extensions-panel-right.xkit-wide-panel { border-left: 1px solid black; background: white; } " +
-					" .xkit-gallery-extension, #xkit-gallery-toolbar, #xkit-gallery-search { color: black; border-color: black; } " +
-					" .xkit-gallery-extension .xkit-button { border-top: 1px solid black !important; }" +
-					" #xkit-control-panel-tabs div { color: black; border-color: black; } " +
-					" #xkit-control-panel-tabs { background: rgb(200,200,200); } " +
-					" #xkit-about-window-links {border-top: 1px solid black; } " +
-					" .notes .note > *, .notes .note blockquote { font-size: 14px; line-height: 22px; } " +
-					" .notes_outer_container.popover .note blockquote { font-size: 14px !important; } " +
-					" .xkit-notification {background-color: white !important; color: black; } " +
-					" .xkit-notification:hover { text-decoration: underline; } " +
-					" #xkit-window-shadow { background-color: rgba(0,0,0,0.77); } " +
-					" .xkit-window-buttons { border-top: 1px solid black; } ";
+			m_css += this.xkit_contrast_icons_css;
+		}
+
+		if (XKit.interface.where().inbox) {
+			m_css += ".post_full.is_note.no_body .post_footer { margin: 0; }";
 		}
 
 		XKit.tools.add_css(m_css, "accesskit");
 
 	},
+
+	xkit_contrast_icons_css: `
+		.xkit-extension-setting, .xkit-extension-setting-separator { color: black !important; border-bottom: 1px solid rgb(100,100,100); }
+		.xkit-extension-setting-separator { background: rgb(230,230,230); }
+		#xkit-extensions-panel-top { border-bottom: 1px solid black; }
+		#xkit-extensions-panel-right, #xkit-extensions-panel-left, #xkit-extensions-panel-left-search { border-color: black; }
+		#xkit-extensions-panel-left .xkit-extension {color: black; border-color: black; }
+		.xkit-button { border-color: black; color: black; }
+		.xkit-button:hover { border-color: black; color: black; text-decoration: underline; }
+		#xkit-extensions-panel-top .description, #xkit-extensions-panel-top .description .details { color: black; }
+		.xkit-checkbox, .xkit-change-ext-setting-checkbox { color: black } .xkit-change-ext-setting-checkbox:hover, .xkit-checkbox:hover { text-decoration: underline; }
+		.xkit-extension-setting.checkbox .xkit-checkbox, .xkit-extension-setting .title { color: black; }
+		.xkit-checkbox.selected b { background-color: #184e98; }
+		.xkit-checkbox b { border: 1px solid black; }
+		#xkit-extensions-panel-right .xkit-others-panel .description { color: black; }
+		.xkit-progress-bar { border: 1px solid black; box-shadow: none; }
+		.xkit-progress-bar-inner { background: #154389; }
+		#xkit-about-window-text .subtitle, #xkit-about-window-links a {color: black; }
+		#xkit-extensions-panel-left .xkit-extension .title { color: black; }
+		#xkit-extensions-panel-left .xkit-extension.text-only.selected, #xkit-extensions-panel-left .xkit-extension.selected .title { color: black; font-weight: bold; text-decoration: underline; }
+		#xkit-extensions-display-type-iconic, #xkit-extensions-display-type-normal { border-color: black; }
+		#xkit-extensions-panel-left .xkit-extension.text-only { color: black; }
+		#xkit-extensions-panel-left .xkit-extension.text-only.selected { text-decoration: underline; }
+		#xkit-extensions-panel-right .xkit-message-display { color: black; }
+		#xkit-extensions-panel-right .xkit-message-info { color: black; border-bottom: 1px solid black; }
+		#xkit-extensions-panel-right.xkit-wide-panel { border-left: 1px solid black; background: white; }
+		.xkit-gallery-extension, #xkit-gallery-toolbar, #xkit-gallery-search { color: black; border-color: black; }
+		.xkit-gallery-extension .xkit-button { border-top: 1px solid black !important; }
+		#xkit-control-panel-tabs div { color: black; border-color: black; }
+		#xkit-control-panel-tabs { background: rgb(200,200,200); }
+		#xkit-about-window-links {border-top: 1px solid black; }
+		.xkit-notification {background-color: white !important; color: black; }
+		.xkit-notification:hover { text-decoration: underline; }
+		#xkit-window-shadow { background-color: rgba(0,0,0,0.77); }
+		.xkit-window-buttons { border-top: 1px solid black; }
+	`,
 
 	vis_caps: function() {
 
@@ -311,20 +404,20 @@ XKit.extensions.accesskit = new Object({
 		var imgWidth = '';
 		var rowHeight = '';
 
-		$('.photoset_row').each(function () {
+		$('.photoset_row').each(function() {
 
 			if (!$(this).hasClass('xkit-accesskit-viscaps')) { //prevents double-dipping
 
-				$(this).attr('style',$(this).attr('style').replace('height','min-height'));
+				$(this).attr('style', $(this).attr('style').replace('height', 'min-height'));
 				rowHeight = $(this).css('min-height');
 
-				$(this).find('a').each(function () {
+				$(this).find('a').each(function() {
 
 					if (!$(this).hasClass('xkit-accesskit-viscaps')) { //protection!
 
 						imgCap = $(this).find('img').attr('alt');
 						imgWidth = $(this).find('img').css('width');
-						$(this).html('<div style="height: '+rowHeight+'; overflow: hidden;">'+$(this).html()+'</div><p style="width: '+imgWidth+'; white-space: pre-wrap">'+imgCap+'</p>');
+						$(this).html('<div style="height: ' + rowHeight + '; overflow: hidden;">' + $(this).html() + '</div><p style="width: ' + imgWidth + '; white-space: pre-wrap">' + imgCap + '</p>');
 
 						$(this).addClass('xkit-accesskit-viscaps');
 

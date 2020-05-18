@@ -1,5 +1,5 @@
 //* TITLE Separator **//
-//* VERSION 1.1.3 **//
+//* VERSION 1.1.6 **//
 //* DESCRIPTION Where were we again? **//
 //* DEVELOPER STUDIOXENIX **//
 //* DETAILS A simple extension that puts a divider showing where you left off on your dashboard. **//
@@ -43,19 +43,15 @@ XKit.extensions.separator = new Object({
 
 		if (XKit.extensions.separator.preferences.jump_to.value === true) {
 
-			do_continue = false;
-			if (typeof XKit.interface.where().endless !== "undefined") {
-				if (XKit.interface.where().endless === false) {
-					do_continue = true;
-				}
-			}
-
-			xf_html = '<ul class="controls_section" id="separator_ul">' +
-				'<li class="section_header selected">SEPARATOR</li>' +
-				'<li class="no_push" style="height: 36px;"><a href="#" id="separator_button">' +
-					'<div class="hide_overflow" style="color: rgba(255, 255, 255, 0.5) !important; font-weight: bold; padding-left: 10px; padding-top: 8px;">Go to last viewed post<span class="sub_control link_arrow arrow_right"></span></div>' +
-				'</a></li></ul>';
-			$("ul.controls_section:first").before(xf_html);
+			XKit.interface.sidebar.add({
+				id: "separator_sidebar",
+				title: "Separator",
+				items: [{
+					id: "separator_button",
+					text: "Go to last viewed post",
+					carrot: true
+				}]
+			});
 
 
 			$("#separator_button").click(function() {
@@ -77,7 +73,7 @@ XKit.extensions.separator = new Object({
 
 		}
 
-		var last_loaded_post = XKit.storage.get("separator","last_post","");
+		var last_loaded_post = XKit.storage.get("separator", "last_post", "");
 
 		var current_last_post = $("body").find(".posts .post").not("#tumblr_radar").not(".new_post_buttons").first();
 
@@ -108,7 +104,7 @@ XKit.extensions.separator = new Object({
 						XKit.extensions.separator.find_closest(100);
 					} else {
 						var current_last = $(".posts .post").first();
-						current_last_id = $(current_last).attr('data-post-id');
+						var current_last_id = $(current_last).attr('data-post-id');
 						if (current_last_id < XKit.extensions.separator.check_for) {
 							XKit.extensions.separator.find_closest(100);
 						} else {
@@ -127,7 +123,7 @@ XKit.extensions.separator = new Object({
 
 		}
 
-		XKit.storage.set("separator","last_post",$(current_last_post).attr('data-post-id'));
+		XKit.storage.set("separator", "last_post", $(current_last_post).attr('data-post-id'));
 
 	},
 
@@ -149,7 +145,7 @@ XKit.extensions.separator = new Object({
 				try {
 					// Just in case.
 					XKit.post_listener.remove("separator");
-				} catch(e) {
+				} catch (e) {
 					console.log("Unable to remove separator post listener.");
 				}
 
@@ -169,9 +165,7 @@ XKit.extensions.separator = new Object({
 	check_if_passed: function() {
 
 		var current_last = $(".posts .post").last();
-		current_last_id = $(current_last).attr('data-post-id');
-
-		// alert("checking for: " + XKit.extensions.separator.check_for + "\n\n" + "current last: " + current_last_id);
+		var current_last_id = $(current_last).attr('data-post-id');
 
 		if (current_last_id < XKit.extensions.separator.check_for) {
 
@@ -211,7 +205,7 @@ XKit.extensions.separator = new Object({
 	destroy: function() {
 		this.running = false;
 		$("#xkit-post-separator").remove();
-		$("#separator_ul").remove();
+		XKit.interface.sidebar.remove("separator_sidebar");
 		XKit.post_listener.remove("separator");
 		XKit.tools.remove_css("separator");
 		XKit.tools.remove_css("separator-thick");

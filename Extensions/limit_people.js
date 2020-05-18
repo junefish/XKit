@@ -1,5 +1,5 @@
 //* TITLE Limit People **//
-//* VERSION 0.2.3 **//
+//* VERSION 0.2.4 **//
 //* DESCRIPTION Limit the appearance of blogs on dash **//
 //* DETAILS Some people on your dashboard posting a lot? Limit people limits how many consecutive posts by the same person appear on your dashboard at once. If a user makes more than 2 consecutive posts, the rest will be hidden until you click on a button to show them. **//
 //* DEVELOPER new-xkit **//
@@ -41,7 +41,7 @@ XKit.extensions.limit_people = new Object({
 			XKit.post_listener.add("limit_people", XKit.extensions.limit_people.do);
 			XKit.extensions.limit_people.do();
 
-			$(document).on("click",".xkit-limit-people-opener", XKit.extensions.limit_people.open);
+			$(document).on("click", ".xkit-limit-people-opener", XKit.extensions.limit_people.open);
 
 		}
 
@@ -60,7 +60,7 @@ XKit.extensions.limit_people = new Object({
 
 		});
 
-		$($(m_obj).attr('data-to-get') + " .post.xkit-limit-people-grouped-hidden").css("opacity","0").removeClass("xkit-limit-people-grouped-hidden");
+		$($(m_obj).attr('data-to-get') + " .post.xkit-limit-people-grouped-hidden").css("opacity", "0").removeClass("xkit-limit-people-grouped-hidden");
 
 		$($(m_obj).attr('data-to-get') + " .post").animate({ opacity: 1}, 400);
 
@@ -76,13 +76,11 @@ XKit.extensions.limit_people = new Object({
 	last_grouped: false,
 
 	do: function() {
-		if (XKit.page.peepr) { return; }
-
 		var size_changed = false;
 
 		var posts = XKit.interface.get_posts("xkit-limit-people-checked");
 
-		var after_v = parseInt(XKit.extensions.limit_people.preferences.limit.value.replace("after",""));
+		var after_v = parseInt(XKit.extensions.limit_people.preferences.limit.value.replace("after", ""));
 
 		var no_endless = $("body").hasClass("without_auto_paginate");
 
